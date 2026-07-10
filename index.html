@@ -16,11 +16,11 @@
         .menu-item:hover { background: #f8fafc; color: var(--text); }
         .menu-item.active { background: #eff6ff; color: var(--accent); border-left: 3px solid var(--accent); }
         
-        .main-content { flex: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+        .main-content { flex: 1; position: relative; background: #000; overflow: hidden; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
         
-        .error-msg { color: white; text-align: center; display: none; }
-        .error-msg a { color: var(--accent); }
+        /* Стили для встроенной игры (чтобы она не вылезала) */
+        #builtin-game { display: none; width: 100%; height: 100%; background: #050505; position: absolute; top: 0; left: 0; }
         
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -34,47 +34,106 @@
 <div class="sidebar">
     <div class="logo">ROM'S HUB</div>
     
-    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">🔥 THE LEGEND (-/)</div>
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">💻 CYBER-IDLE v3.0</div>
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">🚀 NEW PROJECT (-54)</div>
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/drift/', this)">🏎️ NEON DRIFT</div>
+    <!-- Внешние игры -->
+    <div class="menu-item active" onclick="loadExternal('https://romasaf220-art.github.io/-/', this)">🔥 THE LEGEND (-/)</div>
+    <div class="menu-item" onclick="loadExternal('https://romasaf220-art.github.io/-224/', this)"> CYBER-IDLE v3.0</div>
+    <div class="menu-item" onclick="loadExternal('https://romasaf220-art.github.io/-54/', this)">🚀 NEW PROJECT (-54)</div>
+    
+    <!-- Встроенная игра -->
+    <div class="menu-item" onclick="loadBuiltIn(this)">️ NEON DRIFT (BUILT-IN)</div>
 </div>
 
 <div class="main-content">
-    <div id="errorMsg" class="error-msg">
-        <h2>Игра не загружается внутри Хаба.</h2>
-        <p>Попробуй открыть её напрямую:</p>
-        <br>
-        <a id="directLink" href="#" target="_blank" style="padding: 10px 20px; border: 1px solid white; text-decoration: none;">ОТКРЫТЬ В НОВОЙ ВКЛАДКЕ</a>
-    </div>
-    <iframe id="gameFrame" src="" allow="fullscreen" onload="hideError()" onerror="showError()"></iframe>
+    <!-- Окно для внешних игр -->
+    <iframe id="gameFrame" src="https://romasaf220-art.github.io/-/"></iframe>
+    
+    <!-- Контейнер для встроенной игры -->
+    <div id="builtin-game"></div>
 </div>
 
 <script>
-    function loadGame(url, el) {
+    // Код игры Neon Drift (храним его как строку)
+    const driftGameCode = `
+    <!DOCTYPE html>
+    <html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>body{margin:0;overflow:hidden;background:#050505;color:#fff;font-family:monospace;touch-action:none}canvas{display:block}.ui{position:absolute;top:20px;left:20px;font-size:20px;font-weight:bold;pointer-events:none}.menu{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:rgba(0,0,0,0.9);padding:30px;border:2px solid #00ff9d;border-radius:10px}button{background:#00ff9d;border:none;padding:10px 20px;font-size:18px;cursor:pointer;font-weight:bold;margin-top:10px}</style></head><body>
+    <div class='ui'>DIST: <span id='dist'>0</span>m | 💰 <span id='money'>0</span></div>
+    <div id='menu' class='menu'><h1>NEON DRIFT</h1><p>Тапай влево/вправо или стрелки</p><button onclick='start()'>START</button></div>
+    <canvas id='c'></canvas>
+    <script>
+    const c=document.getElementById('c'),ctx=c.getContext('2d');let w,h,score=0,money=0,playing=false;
+    let p={x:0,y:0,w:40,h:70,vx:0},objs=[],speed=8,input={l:false,r:false};
+    function resize(){w=c.width=window.innerWidth;h=c.height=window.innerHeight;p.x=w/2-20;p.y=h-150;}
+    window.onresize=resize;resize();
+    document.onkeydown=e=>{if(e.key==='ArrowLeft')input.l=true;if(e.key==='ArrowRight')input.r=true;};
+    document.onkeyup=e=>{if(e.key==='ArrowLeft')input.l=false;if(e.key==='ArrowRight')input.r=false;};
+    c.ontouchstart=e=>{if(e.touches[0].clientX<w/2)input.l=true;else input.r=true;};
+    c.ontouchend=()=>input={l:false,r:false};
+    function start(){playing=true;score=0;speed=8;objs=[];document.getElementById('menu').style.display='none';loop();}
+    function loop(){
+        if(!playing)return;
+        ctx.fillStyle='rgba(5,5,5,0.4)';ctx.fillRect(0,0,w,h);
+        // Physics
+        if(input.l)p.vx-=0.6;if(input.r)p.vx+=0.6;
+        p.vx*=0.92;p.x+=p.vx;
+        if(p.x<0){p.x=0;p.vx*=-0.5;}if(p.x>w-p.w){p.x=w-p.w;p.vx*=-0.5;}
+        // Road
+        ctx.strokeStyle='#222';ctx.beginPath();ctx.moveTo(w/2,0);ctx.lineTo(w/2,h);ctx.stroke();
+        // Spawn
+        if(Math.random()<0.02)objs.push({x:Math.random()*(w-60)+30,y:-100,t:Math.random()>0.3?'e':'c'});
+        // Objects
+        objs.forEach((o,i)=>{
+            o.y+=speed;
+            ctx.fillStyle=o.t==='e'?'#ff0055':'#ffd700';
+            if(o.t==='c'){ctx.beginPath();ctx.arc(o.x+30,o.y+30,25,0,Math.PI*2);ctx.fill();}
+            else ctx.fillRect(o.x,o.y,60,60);
+            // Collision
+            if(p.x<o.x+60&&p.x+p.w>o.x&&p.y<o.y+60&&p.y+p.h>o.y){
+                if(o.t==='c'){money+=50;objs.splice(i,1);}
+                else{playing=false;document.getElementById('menu').style.display='block';}
+            }
+            if(o.y>h)objs.splice(i,1);
+        });
+        // Player
+        ctx.shadowBlur=15;ctx.shadowColor='#00ff9d';ctx.fillStyle='#00ff9d';ctx.fillRect(p.x,p.y,p.w,p.h);ctx.shadowBlur=0;
+        score+=speed/20;
+        document.getElementById('dist').innerText=Math.floor(score);
+        document.getElementById('money').innerText=money;
+        requestAnimationFrame(loop);
+    }
+    <\/script></body></html>
+    `;
+
+    function loadExternal(url, el) {
         document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
         if(el) el.classList.add('active');
         
+        // Скрываем встроенную игру, показываем iframe
+        document.getElementById('builtin-game').style.display = 'none';
+        document.getElementById('builtin-game').innerHTML = '';
         const frame = document.getElementById('gameFrame');
-        const errorDiv = document.getElementById('errorMsg');
-        const link = document.getElementById('directLink');
-        
         frame.style.display = 'block';
-        errorDiv.style.display = 'none';
         frame.src = url;
-        link.href = url;
     }
 
-    function hideError() {
-        document.getElementById('errorMsg').style.display = 'none';
+    function loadBuiltIn(el) {
+        document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
+        if(el) el.classList.add('active');
+
+        // Скрываем iframe, запускаем встроенную игру
+        document.getElementById('gameFrame').style.display = 'none';
+        document.getElementById('gameFrame').src = ''; 
+        
+        const container = document.getElementById('builtin-game');
+        container.style.display = 'block';
+        container.innerHTML = driftGameCode;
     }
-    
+
     // Загрузка первой игры при старте
     window.onload = () => {
         const firstBtn = document.querySelector('.menu-item');
         if(firstBtn) firstBtn.click();
     }
 </script>
-
 </body>
 </html>
