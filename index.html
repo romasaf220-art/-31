@@ -2,120 +2,226 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROM | CYBER HUB</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PUSSY CLICKER: MEOW OVERLOAD</title>
     <style>
-        :root { --bg: #050505; --panel: #0a0a0f; --accent: #00ff9d; --sec: #bd00ff; --text: #e0e0e0; --dim: #555; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; line-height: 1.6; overflow-x: hidden; }
+        :root { --bg: #fff5f5; --accent: #ff9ff3; --text: #2d3436; --card: #ffffff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
         
-        /* CRT Scanline */
-        body::after { content: " "; display: block; position: fixed; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); background-size: 100% 4px; z-index: 999; pointer-events: none; }
+        header { padding: 20px; text-align: center; width: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .score-display { font-size: 2em; font-weight: bold; color: var(--accent); }
+        .fish-icon { font-size: 1.5em; }
 
-        .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
+        main { flex: 1; position: relative; width: 100%; max-width: 600px; overflow: hidden; cursor: pointer; }
         
-        header { text-align: center; margin-bottom: 60px; border-bottom: 1px solid var(--dim); padding-bottom: 40px; }
-        h1 { font-size: 3em; color: var(--accent); text-shadow: 0 0 20px rgba(0,255,157,0.4); margin-bottom: 10px; letter-spacing: 5px; }
-        .status { color: var(--sec); font-size: 0.9em; text-transform: uppercase; letter-spacing: 2px; }
-        .status::before { content: '●'; color: var(--accent); margin-right: 10px; animation: blink 2s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
+        /* The Cat */
+        .cat-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: 0.1s; }
+        .cat-emoji { font-size: 8em; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1)); transition: 0.1s; }
+        .cat-container:active .cat-emoji { transform: scale(0.9); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-bottom: 60px; }
+        /* Floating Text */
+        .float-text { position: absolute; font-weight: bold; color: var(--accent); font-size: 1.5em; pointer-events: none; animation: floatUp 1s forwards; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-50px); } }
+
+        /* Upgrades Panel */
+        .panel { position: absolute; bottom: 0; left: 0; right: 0; background: var(--card); padding: 20px; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.1); transform: translateY(100%); transition: 0.3s; z-index: 20; max-height: 50vh; overflow-y: auto; }
+        .panel.open { transform: translateY(0); }
         
-        .card { background: var(--panel); border: 1px solid var(--dim); padding: 25px; transition: 0.3s; position: relative; overflow: hidden; }
-        .card:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,255,157,0.1); }
-        .card h3 { color: var(--accent); margin-bottom: 10px; font-size: 1.4em; }
-        .card p { color: #aaa; font-size: 0.9em; margin-bottom: 20px; }
-        .btn { display: inline-block; padding: 10px 20px; border: 1px solid var(--accent); color: var(--accent); text-decoration: none; text-transform: uppercase; font-size: 0.8em; transition: 0.2s; }
-        .btn:hover { background: var(--accent); color: #000; }
+        .toggle-btn { position: absolute; top: -50px; right: 20px; background: var(--accent); color: white; padding: 10px 20px; border-radius: 20px 20px 0 0; cursor: pointer; font-weight: bold; box-shadow: 0 -5px 10px rgba(0,0,0,0.1); }
+        
+        .upg-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .upg-info h4 { margin-bottom: 5px; }
+        .upg-info p { font-size: 0.8em; color: #888; }
+        .buy-btn { background: var(--btn); color: white; border: none; padding: 8px 15px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .buy-btn:disabled { background: #ccc; cursor: not-allowed; }
 
-        .terminal-section { background: #000; border: 1px solid #333; padding: 20px; font-size: 0.9em; color: #ccc; margin-bottom: 60px; }
-        .terminal-header { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; color: var(--dim); }
-        .log-line { margin-bottom: 5px; }
-        .log-time { color: var(--dim); margin-right: 10px; }
-        .log-msg { color: var(--text); }
-        .highlight { color: var(--accent); }
+        /* Skins Grid */
+        .skins-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .skin-btn { font-size: 2em; padding: 10px; background: #f0f0f0; border: 2px solid transparent; border-radius: 10px; cursor: pointer; text-align: center; }
+        .skin-btn.active { border-color: var(--accent); background: #fff0f6; }
+        .skin-btn.locked { opacity: 0.5; filter: grayscale(1); }
 
-        footer { text-align: center; color: var(--dim); font-size: 0.8em; padding-top: 40px; border-top: 1px solid var(--dim); }
-        .socials a { color: var(--text); margin: 0 10px; text-decoration: none; transition: 0.2s; }
-        .socials a:hover { color: var(--accent); }
-
-        @media (max-width: 600px) {
-            h1 { font-size: 2em; }
-            .container { padding: 20px; }
-        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <header>
-        <h1>ROMASAF220</h1>
-        <div class="status">System Online // Developer Mode</div>
-        <p style="margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto; color: #888;">
-            Создаю цифровые миры, тестирую пределы кода и ищу новые вызовы. 
-            Добро пожаловать в мой персональный хаб.
-        </p>
-    </header>
+<header>
+    <div class="score-display"><span id="score">0</span> <span class="fish-icon">🐟</span></div>
+    <div style="font-size: 0.8em; color: #888;">per second: <span id="fps">0</span></div>
+</header>
 
-    <div class="grid">
-        <!-- Project 1 -->
-        <div class="card">
-            <h3>CYBER-IDLE v3.0</h3>
-            <p>Кликер с элементами RPG, кастомизацией ядра и мини-игрой. Полная автоматизация и экспорт сохранений.</p>
-            <a href="https://romasaf220-art.github.io/-224/" target="_blank" class="btn">Launch Project</a>
-        </div>
-
-        <!-- Project 2 -->
-        <div class="card">
-            <h3>NEON DRIFT</h3>
-            <p>Аркадный раннер с физикой дрифта. Сбор данных, уклонение от фаерволов и бесконечная трасса.</p>
-            <a href="#" class="btn">Coming Soon</a>
-        </div>
-
-        <!-- Project 3 -->
-        <div class="card">
-            <h3>REFLEX TRAINER</h3>
-            <p>Тренажер реакции для киберспортсменов. Адаптивная сложность и синтезированный звук.</p>
-            <a href="#" class="btn">In Development</a>
-        </div>
+<main id="gameArea">
+    <div class="cat-container" id="catBtn">
+        <div class="cat-emoji" id="catIcon">🐱</div>
     </div>
+</main>
 
-    <div class="terminal-section">
-        <div class="terminal-header">>> SYSTEM_LOGS</div>
-        <div id="logs">
-            <div class="log-line"><span class="log-time">[10:00]</span> <span class="log-msg">Initializing Cyber Hub...</span></div>
-            <div class="log-line"><span class="log-time">[10:01]</span> <span class="log-msg highlight">Project Cyber-Idle v3.0 deployed successfully.</span></div>
-            <div class="log-line"><span class="log-time">[10:05]</span> <span class="log-msg">Waiting for new input...</span></div>
-        </div>
-    </div>
+<div class="panel" id="upgradePanel">
+    <div class="toggle-btn" onclick="togglePanel()">SHOP & SKINS</div>
+    
+    <h3>UPGRADES</h3>
+    <div id="upgradesList"></div>
 
-    <footer>
-        <div class="socials">
-            <a href="https://github.com/romasaf220-art" target="_blank">GITHUB</a>
-            <a href="#">EMAIL</a>
-            <a href="#">TELEGRAM</a>
-        </div>
-        <p style="margin-top: 20px;">© 2026 ROMASAF220. All systems operational.</p>
-    </footer>
+    <h3 style="margin-top: 20px;">CAT SKINS</h3>
+    <div class="skins-grid" id="skinsList"></div>
 </div>
 
 <script>
-    // Simple typing effect for logs
-    const logs = document.getElementById('logs');
-    function addLog(msg, type = 'normal') {
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const div = document.createElement('div');
-        div.className = 'log-line';
-        div.innerHTML = `<span class="log-time">[${time}]</span> <span class="log-msg ${type === 'highlight' ? 'highlight' : ''}">${msg}</span>`;
-        logs.appendChild(div);
-        logs.scrollTop = logs.scrollHeight;
+/** PUSSY CLICKER ENGINE **/
+let state = {
+    score: 0,
+    clickPower: 1,
+    autoClick: 0,
+    skin: '🐱',
+    unlockedSkins: ['🐱'],
+    upgrades: [
+        {id: 1, name: 'Tasty Treat', cost: 50, power: 1, type: 'click', count: 0},
+        {id: 2, name: 'Laser Pointer', cost: 200, power: 5, type: 'auto', count: 0},
+        {id: 3, name: 'Catnip', cost: 1000, power: 10, type: 'click', count: 0},
+        {id: 4, name: 'Robot Mouse', cost: 5000, power: 50, type: 'auto', count: 0}
+    ],
+    skins: [
+        {icon: '🐱', cost: 0}, {icon: '😼', cost: 500}, {icon: '😻', cost: 2000},
+        {icon: '🙀', cost: 5000}, {icon: '🦁', cost: 15000}, {icon: '🐯', cost: 50000}
+    ]
+};
+
+const catBtn = document.getElementById('catBtn');
+const catIcon = document.getElementById('catIcon');
+const scoreEl = document.getElementById('score');
+const fpsEl = document.getElementById('fps');
+const gameArea = document.getElementById('gameArea');
+
+// Load Save
+if(localStorage.getItem('pussy_clicker')) {
+    const saved = JSON.parse(localStorage.getItem('pussy_clicker'));
+    state = {...state, ...saved};
+    updateSkin();
+}
+
+function saveGame() {
+    localStorage.setItem('pussy_clicker', JSON.stringify(state));
+}
+
+function handleClick(e) {
+    // Prevent double firing on touch devices
+    if(e.type === 'touchstart') e.preventDefault();
+    
+    state.score += state.clickPower;
+    updateUI();
+    createParticles(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+    
+    // Animation
+    catIcon.style.transform = 'scale(0.8) rotate(10deg)';
+    setTimeout(() => catIcon.style.transform = 'scale(1) rotate(0deg)', 100);
+}
+
+catBtn.addEventListener('mousedown', handleClick);
+catBtn.addEventListener('touchstart', handleClick, {passive: false});
+
+function createParticles(x, y) {
+    const el = document.createElement('div');
+    el.className = 'float-text';
+    el.innerText = `+${state.clickPower} 🐟`;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+// Auto Clicker Loop
+setInterval(() => {
+    if(state.autoClick > 0) {
+        state.score += state.autoClick;
+        updateUI();
     }
+}, 1000);
 
-    // Simulate activity
-    setTimeout(() => addLog('User connection established from [UNKNOWN_IP]', 'highlight'), 2000);
-    setTimeout(() => addLog('Checking project integrity... OK'), 4000);
+setInterval(saveGame, 5000);
+
+function updateUI() {
+    scoreEl.innerText = Math.floor(state.score);
+    fpsEl.innerText = state.autoClick;
+    renderShop();
+}
+
+function togglePanel() {
+    document.getElementById('upgradePanel').classList.toggle('open');
+}
+
+function buyUpgrade(id) {
+    const upg = state.upgrades.find(u => u.id === id);
+    if(state.score >= upg.cost) {
+        state.score -= upg.cost;
+        upg.count++;
+        upg.cost = Math.floor(upg.cost * 1.5);
+        
+        if(upg.type === 'click') state.clickPower += upg.power;
+        else state.autoClick += upg.power;
+        
+        updateUI();
+    }
+}
+
+function unlockSkin(icon, cost) {
+    if(state.score >= cost && !state.unlockedSkins.includes(icon)) {
+        state.score -= cost;
+        state.unlockedSkins.push(icon);
+        updateUI();
+        renderSkins();
+    }
+}
+
+function setSkin(icon) {
+    if(state.unlockedSkins.includes(icon)) {
+        state.skin = icon;
+        updateSkin();
+        renderSkins();
+    }
+}
+
+function updateSkin() {
+    catIcon.innerText = state.skin;
+}
+
+function renderShop() {
+    const list = document.getElementById('upgradesList');
+    list.innerHTML = '';
+    state.upgrades.forEach(u => {
+        const div = document.createElement('div');
+        div.className = 'upg-item';
+        div.innerHTML = `
+            <div class="upg-info">
+                <h4>${u.name} (Lvl ${u.count})</h4>
+                <p>+${u.power} ${u.type === 'click' ? 'per click' : '/ sec'}</p>
+            </div>
+            <button class="buy-btn" onclick="buyUpgrade(${u.id})" ${state.score < u.cost ? 'disabled' : ''}>
+                ${u.cost} 🐟
+            </button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function renderSkins() {
+    const list = document.getElementById('skinsList');
+    list.innerHTML = '';
+    state.skins.forEach(s => {
+        const isUnlocked = state.unlockedSkins.includes(s.icon);
+        const isActive = state.skin === s.icon;
+        const div = document.createElement('div');
+        div.className = `skin-btn ${isActive ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}`;
+        div.innerText = s.icon;
+        div.onclick = () => isUnlocked ? setSkin(s.icon) : unlockSkin(s.icon, s.cost);
+        if(!isUnlocked) div.innerHTML += `<div style="font-size:0.4em">${s.cost}🐟</div>`;
+        list.appendChild(div);
+    });
+}
+
+// Init
+updateUI();
+renderSkins();
 </script>
-
 </body>
 </html>
