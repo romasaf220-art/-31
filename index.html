@@ -3,65 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROM'S GAME HUB</title>
+    <title>NEON DRIFT</title>
     <style>
-        :root { --bg: #f1f5f9; --sidebar: #ffffff; --text: #0f172a; --accent: #3b82f6; }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
-        
-        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px; z-index: 10; }
-        .logo { font-size: 1.5em; font-weight: 800; color: var(--text); margin-bottom: 30px; padding-left: 10px; border-left: 4px solid var(--accent); }
-        
-        .menu-item { padding: 15px; margin-bottom: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #64748b; font-weight: 600; }
-        .menu-item:hover { background: #f8fafc; color: var(--text); }
-        .menu-item.active { background: #eff6ff; color: var(--accent); border-left: 3px solid var(--accent); }
-        
-        .main-content { flex: 1; position: relative; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
-        
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
-            .logo { display: none; }
-        }
+        body { margin: 0; overflow: hidden; background: #111; font-family: monospace; color: white; touch-action: none; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 20px; left: 20px; font-size: 20px; font-weight: bold; pointer-events: none; }
+        #menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 10px; border: 1px solid #0ff; }
+        button { background: #0ff; border: none; padding: 10px 20px; font-size: 18px; cursor: pointer; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <div class="logo">ROM'S HUB</div>
-    
-    <!-- ССЫЛКА 1 -->
-    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">
-        🔥 THE LEGEND (-/)
+    <div id="ui">SCORE: <span id="score">0</span></div>
+    <div id="menu">
+        <h1>DRIFT LITE</h1>
+        <p>Тапай влево/вправо или используй стрелки</p>
+        <button onclick="start()">PLAY</button>
     </div>
-    
-    <!-- ССЫЛКА 2 -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">
-        💻 CYBER-IDLE v3.0
-    </div>
-
-    <!-- ССЫЛКА 3 (НОВАЯ) -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">
-        🚀 NEW PROJECT (-54)
-    </div>
-
-    <!-- ССЫЛКА 4 -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/drift/', this)">
-        🏎️ NEON DRIFT
-    </div>
-</div>
-
-<div class="main-content">
-    <iframe id="gameFrame" src="https://romasaf220-art.github.io/-/"></iframe>
-</div>
+    <canvas id="c"></canvas>
 
 <script>
-    function loadGame(url, el) {
-        document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
-        if(el) el.classList.add('active');
-        document.getElementById('gameFrame').src = url;
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+let w, h, score = 0, playing = false;
+let player = { x: 0, y: 0, w: 40, h: 60 };
+let objs = [];
+let speed = 5;
+
+function resize() { w = c.width = window.innerWidth; h = c.height = window.innerHeight; player.x = w/2; player.y = h - 100; }
+window.addEventListener('resize', resize); resize();
+
+document.addEventListener('keydown', e => {
+    if(e.key === 'ArrowLeft') player.x -= 40;
+    if(e.key === 'ArrowRight') player.x += 40;
+});
+c.addEventListener('touchstart', e => {
+    if(e.touches[0].clientX < w/2) player.x -= 40;
+    else player.x += 40;
+});
+
+function start() {
+    playing = true; score = 0; speed = 5; objs = [];
+    document.getElementById('menu').style.display = 'none';
+    loop();
+}
+
+function loop() {
+    if(!playing) return;
+    ctx.fillStyle = '#111'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle = '#0ff'; ctx.shadowBlur = 10; ctx.shadowColor = '#0ff';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.shadowBlur = 0;
+
+    if(Math.random() < 0.05) {
+        objs.push({ x: Math.random()*(w-50), y: -50, type: Math.random()>0.3?'enemy':'coin' });
     }
+
+    objs.forEach((o, i) => {
+        o.y += speed;
+        ctx.fillStyle = o.type === 'enemy' ? '#f05' : '#ff0';
+        ctx.fillRect(o.x, o.y, 50, 50);
+        
+        if(player.x < o.x+50 && player.x+player.w > o.x && player.y < o.y+50 && player.y+player.h > o.y) {
+            if(o.type === 'coin') { score += 10; objs.splice(i,1); }
+            else { playing = false; document.getElementById('menu').style.display = 'block'; }
+        }
+        if(o.y > h) objs.splice(i,1);
+    });
+
+    speed += 0.01;
+    document.getElementById('score').innerText = score;
+    requestAnimationFrame(loop);
+}
 </script>
 </body>
 </html>
