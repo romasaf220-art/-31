@@ -9,21 +9,31 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background: var(--bg); height: 100vh; display: flex; overflow: hidden; }
         
-        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px; z-index: 10; }
+        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px; z-index: 10; transition: 0.3s; }
         .logo { font-size: 1.5em; font-weight: 800; color: var(--text); margin-bottom: 30px; padding-left: 10px; border-left: 4px solid var(--accent); }
         
-        .menu-item { padding: 15px; margin-bottom: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #64748b; font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
+        .menu-item { padding: 15px; margin-bottom: 10px; border-radius: 10px; cursor: pointer; transition: 0.2s; color: #64748b; font-weight: 600; }
         .menu-item:hover { background: #f8fafc; color: var(--text); }
         .menu-item.active { background: #eff6ff; color: var(--accent); border-left: 3px solid var(--accent); }
-        
-        /* Ссылка-кнопка для внешней игры */
-        .external-link { text-decoration: none; color: inherit; display: block; }
-        .external-link .menu-item { cursor: pointer; }
-        .external-icon { font-size: 0.8em; opacity: 0.5; margin-left: auto; }
         
         .main-content { flex: 1; position: relative; background: #000; }
         iframe { width: 100%; height: 100%; border: none; display: block; }
         
+        /* Полноэкранный оверлей для игры */
+        #game-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505; z-index: 100; display: none;
+        }
+        
+        /* Кнопка закрытия игры */
+        #close-game {
+            position: absolute; top: 20px; right: 20px; z-index: 101;
+            background: rgba(255,255,255,0.2); color: white; border: 1px solid white;
+            padding: 10px 20px; border-radius: 5px; cursor: pointer; font-family: monospace;
+            display: none;
+        }
+        #close-game:hover { background: white; color: black; }
+
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; height: auto; flex-direction: row; overflow-x: auto; padding: 10px; }
@@ -33,38 +43,67 @@
 </head>
 <body>
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="logo">ROM'S HUB</div>
     
-    <!-- Игры внутри Хаба -->
-    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">
-        🔥 THE LEGEND (-/)
-    </div>
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">
-         CYBER-IDLE v3.0
-    </div>
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">
-         NEW PROJECT (-54)
-    </div>
+    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">🔥 THE LEGEND (-/)</div>
+    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">💻 CYBER-IDLE v3.0</div>
+    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">🚀 NEW PROJECT (-54)</div>
     
-    <!-- Neon Drift открывается в НОВОЙ вкладке -->
-    <a href="https://romasaf220-art.github.io/-31/" target="_blank" class="external-link">
-        <div class="menu-item">
-            🏎️ NEON DRIFT 
-            <span class="external-icon">↗ OPEN IN NEW TAB</span>
-        </div>
-    </a>
+    <!-- Эта кнопка открывает игру ПОВЕРХ хаба -->
+    <div class="menu-item" onclick="openDriftFullscreen(this)">🏎️ NEON DRIFT (FULLSCREEN)</div>
 </div>
 
 <div class="main-content">
+    <button id="close-game" onclick="closeGame()">✕ CLOSE GAME</button>
     <iframe id="gameFrame" src="https://romasaf220-art.github.io/-/"></iframe>
+    
+    <!-- Сюда загружается игра на весь экран -->
+    <div id="game-overlay">
+        <iframe id="driftFrame" src="" style="width:100%; height:100%; border:none;"></iframe>
+    </div>
 </div>
 
 <script>
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('game-overlay');
+    const driftFrame = document.getElementById('driftFrame');
+    const closeBtn = document.getElementById('close-game');
+
     function loadGame(url, el) {
+        // Обычная загрузка в сайдбар
         document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
         if(el) el.classList.add('active');
+        
+        // Если открыта полноэкранная игра - закрываем её
+        overlay.style.display = 'none';
+        closeBtn.style.display = 'none';
+        driftFrame.src = '';
+        
         document.getElementById('gameFrame').src = url;
+    }
+
+    function openDriftFullscreen(el) {
+        document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
+        if(el) el.classList.add('active');
+        
+        // Показываем оверлей поверх всего
+        overlay.style.display = 'block';
+        closeBtn.style.display = 'block';
+        
+        // Загружаем игру в отдельный фрейм без ограничений
+        // Важно: используем ту же ссылку, но теперь она на весь экран
+        driftFrame.src = "https://romasaf220-art.github.io/-31/"; 
+    }
+
+    function closeGame() {
+        overlay.style.display = 'none';
+        closeBtn.style.display = 'none';
+        driftFrame.src = '';
+        
+        // Возвращаем активность первой игре
+        const firstBtn = document.querySelector('.menu-item');
+        if(firstBtn) firstBtn.click();
     }
 </script>
 </body>
