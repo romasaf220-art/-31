@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEON DRIFT</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #050505; font-family: 'Courier New', monospace; color: white; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        .ui { 
+            position: absolute; top: 20px; left: 20px; 
+            font-size: 24px; font-weight: bold; pointer-events: none; 
+            text-shadow: 0 0 10px rgba(0,255,157,0.5); z-index: 10; 
+        }
+        
+        .menu { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            text-align: center; background: rgba(0,0,0,0.95); padding: 40px 60px; 
+            border: 2px solid #00ff9d; border-radius: 15px; 
+            box-shadow: 0 0 50px rgba(0,255,157,0.3); z-index: 20; 
+        }
+        
+        h1 { font-size: 2.5em; margin-bottom: 10px; color: #00ff9d; text-shadow: 0 0 20px #00ff9d; letter-spacing: 3px; }
+        p { color: #aaa; margin-bottom: 25px; font-size: 1.1em; }
+        
+        button { 
+            background: transparent; border: 2px solid #00ff9d; color: #00ff9d; 
+            padding: 15px 40px; font-size: 1.2em; font-family: inherit; 
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; 
+            font-weight: bold; letter-spacing: 2px; outline: none;
+        }
+        button:hover { background: #00ff9d; color: #000; box-shadow: 0 0 30px #00ff9d; }
+        button:active { transform: scale(0.95); }
+        
+        .money { color: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="ui">DIST: <span id="dist">0</span>m | <span class="money">💰 <span id="money">0</span></span></div>
+    
+    <div id="menu" class="menu">
+        <h1>NEON DRIFT</h1>
+        <p>Стрелки ← → или тап по сторонам экрана</p>
+        <button id="startBtn">START ENGINE</button>
+    </div>
+
+    <canvas id="c"></canvas>
+
+<script>
+// Инициализация
+const c = document.getElementById('c');
+const ctx = c.getContext('2d');
+const menu = document.getElementById('menu');
+const startBtn = document.getElementById('startBtn');
+const distEl = document.getElementById('dist');
+const moneyEl = document.getElementById('money');
+
+let w, h, score = 0, money = 0, playing = false, speed = 8;
+let player = { x: 0, y: 0, w: 40, h: 70, vx: 0 };
+let objs = [];
+let input = { l: false, r: false };
+
+function resize() { 
+    w = c.width = window.innerWidth; 
+    h = c.height = window.innerHeight; 
+    player.x = w / 2 - 20; 
+    player.y = h - 150; 
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Управление
+document.addEventListener('keydown', e => { 
+    if(e.key==='ArrowLeft') input.l=true; 
+    if(e.key==='ArrowRight') input.r=true; 
+});
+document.addEventListener('keyup', e => { 
+    if(e.key==='ArrowLeft') input.l=false; 
+    if(e.key==='ArrowRight') input.r=false; 
+});
+c.addEventListener('touchstart', e => { 
+    e.preventDefault();
+    if(e.touches[0].clientX < w/2) input.l=true; 
+    else input.r=true; 
+}, {passive:false});
+c.addEventListener('touchend', e => { 
+    e.preventDefault();
+    input.l=false; input.r=false; 
+});
+
+// ЗАПУСК ИГРЫ
+startBtn.addEventListener('click', function() {
+    console.log("Кнопка нажата!"); // Для проверки в консоли
+    playing = true;
+    score = 0;
+    money = 0;
+    speed = 8;
+    objs = [];
+    player.vx = 0;
+    menu.style.display = 'none';
+    loop();
+});
+
+function loop() {
+    if (!playing) return;
+
+    // Фон с шлейфом
+    ctx.fillStyle = 'rgba(5,5,5,0.4)';
+    ctx.fillRect(0, 0, w, h);
+
+    // Физика машины
+    if (input.l) player.vx -= 0.6;
+    if (input.r) player.vx += 0.6;
+    player.vx *= 0.92;
+    player.x += player.vx;
+
+    // Границы
+    if (player.x < 0) { player.x = 0; player.vx *= -0.5; }
+    if (player.x > w - player.w) { player.x = w - player.w; player.vx *= -0.5; }
+
+    // Дорога
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(w / 2, 0);
+    ctx.lineTo(w / 2, h);
+    ctx.stroke();
+
+    // Спавн объектов
+    if (Math.random() < 0.02) {
+        objs.push({
+            x: Math.random() * (w - 60) + 30,
+            y: -100,
+            type: Math.random() > 0.3 ? 'enemy' : 'coin'
+        });
+    }
+
+    // Отрисовка и логика объектов
+    for (let i = objs.length - 1; i >= 0; i--) {
+        let o = objs[i];
+        o.y += speed;
+
+        if (o.type === 'coin') {
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ffd700'; ctx.fillStyle = '#ffd700';
+            ctx.beginPath(); ctx.arc(o.x + 30, o.y + 30, 25, 0, Math.PI * 2); ctx.fill();
+        } else {
+            ctx.shadowBlur = 15; ctx.shadowColor = '#ff0055'; ctx.fillStyle = '#ff0055';
+            ctx.fillRect(o.x, o.y, 60, 60);
+        }
+        ctx.shadowBlur = 0;
+
+        // Столкновение
+        if (player.x < o.x + 60 && player.x + player.w > o.x &&
+            player.y < o.y + 60 && player.y + player.h > o.y) {
+            if (o.type === 'coin') {
+                money += 50;
+                objs.splice(i, 1);
+            } else {
+                gameOver();
+                return;
+            }
+        }
+
+        if (o.y > h) objs.splice(i, 1);
+    }
+
+    // Игрок
+    ctx.shadowBlur = 20; ctx.shadowColor = '#00ff9d'; ctx.fillStyle = '#00ff9d';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.shadowBlur = 0;
+
+    // Прогресс
+    score += speed / 20;
+    speed += 0.005;
+
+    distEl.innerText = Math.floor(score);
+    moneyEl.innerText = money;
+
+    requestAnimationFrame(loop);
+}
+
+function gameOver() {
+    playing = false;
+    menu.querySelector('h1').innerText = "CRASHED";
+    menu.querySelector('p').innerText = `Dist: ${Math.floor(score)}m | Earned: ${money}💰`;
+    startBtn.innerText = "RETRY";
+    menu.style.display = 'block';
+}
+</script>
+</body>
+</html>
