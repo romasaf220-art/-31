@@ -16,8 +16,11 @@
         .menu-item:hover { background: #f8fafc; color: var(--text); }
         .menu-item.active { background: #eff6ff; color: var(--accent); border-left: 3px solid var(--accent); }
         
-        .main-content { flex: 1; position: relative; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; }
+        .main-content { flex: 1; position: relative; background: #000; display: flex; align-items: center; justify-content: center; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+        
+        .error-msg { color: white; text-align: center; display: none; }
+        .error-msg a { color: var(--accent); }
         
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -31,37 +34,47 @@
 <div class="sidebar">
     <div class="logo">ROM'S HUB</div>
     
-    <!-- ССЫЛКА 1 -->
-    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">
-        🔥 THE LEGEND (-/)
-    </div>
-    
-    <!-- ССЫЛКА 2 -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">
-        💻 CYBER-IDLE v3.0
-    </div>
-
-    <!-- ССЫЛКА 3 (НОВАЯ) -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">
-        🚀 NEW PROJECT (-54)
-    </div>
-
-    <!-- ССЫЛКА 4 -->
-    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/drift/', this)">
-        🏎️ NEON DRIFT
-    </div>
+    <div class="menu-item active" onclick="loadGame('https://romasaf220-art.github.io/-/', this)">🔥 THE LEGEND (-/)</div>
+    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-224/', this)">💻 CYBER-IDLE v3.0</div>
+    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/-54/', this)">🚀 NEW PROJECT (-54)</div>
+    <div class="menu-item" onclick="loadGame('https://romasaf220-art.github.io/drift/', this)">🏎️ NEON DRIFT</div>
 </div>
 
 <div class="main-content">
-    <iframe id="gameFrame" src="https://romasaf220-art.github.io/-/"></iframe>
+    <div id="errorMsg" class="error-msg">
+        <h2>Игра не загружается внутри Хаба.</h2>
+        <p>Попробуй открыть её напрямую:</p>
+        <br>
+        <a id="directLink" href="#" target="_blank" style="padding: 10px 20px; border: 1px solid white; text-decoration: none;">ОТКРЫТЬ В НОВОЙ ВКЛАДКЕ</a>
+    </div>
+    <iframe id="gameFrame" src="" allow="fullscreen" onload="hideError()" onerror="showError()"></iframe>
 </div>
 
 <script>
     function loadGame(url, el) {
         document.querySelectorAll('.menu-item').forEach(e => e.classList.remove('active'));
         if(el) el.classList.add('active');
-        document.getElementById('gameFrame').src = url;
+        
+        const frame = document.getElementById('gameFrame');
+        const errorDiv = document.getElementById('errorMsg');
+        const link = document.getElementById('directLink');
+        
+        frame.style.display = 'block';
+        errorDiv.style.display = 'none';
+        frame.src = url;
+        link.href = url;
+    }
+
+    function hideError() {
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+    
+    // Загрузка первой игры при старте
+    window.onload = () => {
+        const firstBtn = document.querySelector('.menu-item');
+        if(firstBtn) firstBtn.click();
     }
 </script>
+
 </body>
 </html>
