@@ -6,13 +6,33 @@
     <title>NEON DRIFT</title>
     <style>
         body { margin: 0; overflow: hidden; background: #050505; font-family: 'Courier New', monospace; color: white; touch-action: none; }
-        canvas { display: block; }
-        .ui { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; pointer-events: none; text-shadow: 0 0 10px rgba(0,255,157,0.5); z-index: 10; }
-        .menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: rgba(0,0,0,0.9); padding: 40px; border: 2px solid #00ff9d; border-radius: 15px; box-shadow: 0 0 50px rgba(0,255,157,0.3); z-index: 20; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        
+        .ui { 
+            position: absolute; top: 20px; left: 20px; 
+            font-size: 24px; font-weight: bold; pointer-events: none; 
+            text-shadow: 0 0 10px rgba(0,255,157,0.5); z-index: 10; 
+        }
+        
+        .menu { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+            text-align: center; background: rgba(0,0,0,0.95); padding: 40px 60px; 
+            border: 2px solid #00ff9d; border-radius: 15px; 
+            box-shadow: 0 0 50px rgba(0,255,157,0.3); z-index: 20; 
+        }
+        
         h1 { font-size: 2.5em; margin-bottom: 10px; color: #00ff9d; text-shadow: 0 0 20px #00ff9d; letter-spacing: 3px; }
-        p { color: #aaa; margin-bottom: 25px; }
-        button { background: transparent; border: 2px solid #00ff9d; color: #00ff9d; padding: 15px 40px; font-size: 1.2em; font-family: inherit; cursor: pointer; transition: 0.2s; text-transform: uppercase; font-weight: bold; letter-spacing: 2px; }
+        p { color: #aaa; margin-bottom: 25px; font-size: 1.1em; }
+        
+        button { 
+            background: transparent; border: 2px solid #00ff9d; color: #00ff9d; 
+            padding: 15px 40px; font-size: 1.2em; font-family: inherit; 
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; 
+            font-weight: bold; letter-spacing: 2px; outline: none;
+        }
         button:hover { background: #00ff9d; color: #000; box-shadow: 0 0 30px #00ff9d; }
+        button:active { transform: scale(0.95); }
+        
         .money { color: #ffd700; }
     </style>
 </head>
@@ -21,15 +41,21 @@
     
     <div id="menu" class="menu">
         <h1>NEON DRIFT</h1>
-        <p>Стрелки или тап по сторонам экрана</p>
-        <button onclick="startGame()">START ENGINE</button>
+        <p>Стрелки ← → или тап по сторонам экрана</p>
+        <button id="startBtn">START ENGINE</button>
     </div>
 
     <canvas id="c"></canvas>
 
 <script>
+// Инициализация
 const c = document.getElementById('c');
 const ctx = c.getContext('2d');
+const menu = document.getElementById('menu');
+const startBtn = document.getElementById('startBtn');
+const distEl = document.getElementById('dist');
+const moneyEl = document.getElementById('money');
+
 let w, h, score = 0, money = 0, playing = false, speed = 8;
 let player = { x: 0, y: 0, w: 40, h: 70, vx: 0 };
 let objs = [];
@@ -45,21 +71,36 @@ window.addEventListener('resize', resize);
 resize();
 
 // Управление
-document.addEventListener('keydown', e => { if(e.key==='ArrowLeft') input.l=true; if(e.key==='ArrowRight') input.r=true; });
-document.addEventListener('keyup', e => { if(e.key==='ArrowLeft') input.l=false; if(e.key==='ArrowRight') input.r=false; });
-c.addEventListener('touchstart', e => { if(e.touches[0].clientX < w/2) input.l=true; else input.r=true; }, {passive:false});
-c.addEventListener('touchend', () => { input.l=false; input.r=false; });
+document.addEventListener('keydown', e => { 
+    if(e.key==='ArrowLeft') input.l=true; 
+    if(e.key==='ArrowRight') input.r=true; 
+});
+document.addEventListener('keyup', e => { 
+    if(e.key==='ArrowLeft') input.l=false; 
+    if(e.key==='ArrowRight') input.r=false; 
+});
+c.addEventListener('touchstart', e => { 
+    e.preventDefault();
+    if(e.touches[0].clientX < w/2) input.l=true; 
+    else input.r=true; 
+}, {passive:false});
+c.addEventListener('touchend', e => { 
+    e.preventDefault();
+    input.l=false; input.r=false; 
+});
 
-function startGame() {
+// ЗАПУСК ИГРЫ
+startBtn.addEventListener('click', function() {
+    console.log("Кнопка нажата!"); // Для проверки в консоли
     playing = true;
     score = 0;
     money = 0;
     speed = 8;
     objs = [];
     player.vx = 0;
-    document.getElementById('menu').style.display = 'none';
+    menu.style.display = 'none';
     loop();
-}
+});
 
 function loop() {
     if (!playing) return;
@@ -133,18 +174,18 @@ function loop() {
     score += speed / 20;
     speed += 0.005;
 
-    document.getElementById('dist').innerText = Math.floor(score);
-    document.getElementById('money').innerText = money;
+    distEl.innerText = Math.floor(score);
+    moneyEl.innerText = money;
 
     requestAnimationFrame(loop);
 }
 
 function gameOver() {
     playing = false;
-    document.querySelector('#menu h1').innerText = "CRASHED";
-    document.querySelector('#menu p').innerText = `Dist: ${Math.floor(score)}m | Earned: ${money}💰`;
-    document.querySelector('#menu button').innerText = "RETRY";
-    document.getElementById('menu').style.display = 'block';
+    menu.querySelector('h1').innerText = "CRASHED";
+    menu.querySelector('p').innerText = `Dist: ${Math.floor(score)}m | Earned: ${money}💰`;
+    startBtn.innerText = "RETRY";
+    menu.style.display = 'block';
 }
 </script>
 </body>
